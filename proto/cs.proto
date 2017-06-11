@@ -1,0 +1,54 @@
+syntax = "proto3";
+package cs;
+
+enum ProtoID {
+    ID_NULL = 0;
+    ID_C2S_Login = 10001;
+    ID_S2C_Login = 10002;
+    ID_C2S_Move = 10003;
+    ID_S2C_Move = 10004;
+    ID_C2S_Attack = 10005;
+    ID_S2C_Attaqk = 10006;
+    ID_S2C_AllPos = 10007;
+}
+
+// 请求登录
+message C2S_Login {
+}
+
+message User {
+    uint32 uid = 1;
+    uint32 dwx = 2;
+    uint32 dwy = 3;
+}
+
+// 得到登录uid
+message S2C_Login {
+    uint32 uid = 1;
+}
+
+// 请求移动
+message C2S_Move {
+    uint32 dwX = 1;
+    uint32 dwY = 2;
+}
+
+// 这次移动最终位置
+message S2C_Move {
+    uint32 dwUid = 1;
+    uint32 dwX = 2;
+    uint32 dwY = 3;
+}
+
+message C2S_Attack {
+    uint32 dwTarget = 1;
+}
+
+message S2C_Attack {
+    string name = 1;
+}
+
+// 发送所有玩家的位置
+message S2C_AllPos {
+    repeated User users = 1;
+}

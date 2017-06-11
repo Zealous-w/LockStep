@@ -1,0 +1,6 @@
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -std=c++0x")
+AUX_SOURCE_DIRECTORY(. DIR_SRCS)
+AUX_SOURCE_DIRECTORY(./proto DIR_PROTO_SRCS)
+add_executable(scene ${DIR_SRCS} ${DIR_PROTO_SRCS})
+target_link_libraries(scene muduo_net)
+target_link_libraries(scene protobuf)
