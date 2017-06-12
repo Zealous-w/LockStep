@@ -7,6 +7,9 @@
 #include <map>
 #include <functional>
 #include <thread>
+#include <mutex>
+#include <queue>
+#include <condition_variable>
 
 #include "Player.h"
 #include "proto/cs.pb.h"
@@ -31,7 +34,8 @@ public:
     void Stop();
 
     void PushMsg(struct PACKET& msg);
-    struct PACKET GetMsg();
+    void ConsumeMsg();
+    bool MsgEmpty();
 
     /////Send Packet/////
     std::string BuildPacket(uint32 dwUid, uint32 dwCmdId, std::string& msg);
@@ -50,6 +54,12 @@ private:
     std::map<uint32, ServiceFunc> command_;
     MapConnections sessions_;
     mutable muduo::MutexLock mutex_;
+
+    /////queue
+    std::mutex mtx_;
+    std::condition_variable cond_;
+    std::queue<struct PACKET> m_msg_queue;
+    std::queue<struct PACKET> m_tmp_queue;
 public:
     bool HandlerLogin(PlayerPtr& play, std::string& str);
     bool HandlerMove(PlayerPtr& play, std::string& str);

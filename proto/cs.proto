@@ -10,7 +10,19 @@ enum ProtoID {
     ID_C2S_Attack = 10005;
     ID_S2C_Attaqk = 10006;
     ID_S2C_AllPos = 10007;
+    ID_C2S_Ping = 10008;
+    ID_S2C_Ping = 10009;
 }
+
+message C2S_Ping {
+    uint32 send_time = 1;
+}
+
+message S2C_Ping {
+    uint32 send_time = 1;
+    uint32 recv_time = 2;
+}
+
 
 // 请求登录
 message C2S_Login {

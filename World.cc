@@ -18,8 +18,9 @@ void World::Loop()
     running_ = true;
     while(running_)
     {
-        struct PACKET tmp = GetMsg();
-        DispatherCommand(tmp);
+        ConsumeMsg();
+        SendAllPosUsers();
+        usleep(66000);// 15帧
     }
 }
 
@@ -30,12 +31,33 @@ void World::Stop()
 
 void World::PushMsg(struct PACKET& msg)
 {
-    msgQueue.put(msg);
+    std::unique_lock<std::mutex> lck(mtx_);
+    m_msg_queue.push(msg);
+    lck.unlock();
+    cond_.notify_all();
 }
 
-struct PACKET World::GetMsg()
+void World::ConsumeMsg()
 {
-    return msgQueue.take();
+    std::unique_lock<std::mutex> lck(mtx_);
+	while(m_msg_queue.empty()){
+		cond_.wait(lck);
+	}
+
+    //LOG_INFO << "MSG QUEUE size : " << m_msg_queue.size();
+    m_tmp_queue.swap(m_msg_queue);
+    lck.unlock();
+	
+    while(!m_tmp_queue.empty()) {
+		struct PACKET pkt = m_tmp_queue.front();
+		m_tmp_queue.pop();
+        DispatherCommand(pkt);
+	}
+}
+
+bool World::MsgEmpty()
+{
+    return !msgQueue.size();
 }
 
 PlayerPtr World::GetUser(std::string name)
@@ -75,7 +97,7 @@ bool World::DeleteUser(const muduo::net::TcpConnectionPtr& conn)
 
  void World::DispatherCommand(struct PACKET& msg)
  {
-    LOG_INFO << "msg.cmd : " << msg.cmd;
+    //LOG_INFO << "msg.cmd : " << msg.cmd;
     if ( command_.find(msg.cmd) != command_.end() )
     {
         PlayerPtr player = GetUser(std::string(msg.connName));
@@ -108,7 +130,7 @@ bool World::DeleteUser(const muduo::net::TcpConnectionPtr& conn)
     memcpy(msg_ + 8, (char*)&pkt.uid, sizeof(uint32));
     memcpy(msg_ + 12, pkt.msg.c_str(), msg.size());
 
-    LOG_INFO << "message size : " << *(uint32*)msg_;
+    //LOG_INFO << "message size : " << *(uint32*)msg_;
     std::string smsg(msg_, pkt.len);
     delete msg_;
     return smsg;
@@ -120,7 +142,7 @@ void World::BroadcastPacket(uint32 dwCmdId, std::string& str)
     for (MapConnections::iterator it = sessions_.begin(); 
                 it != sessions_.end(); ++it )
     {
-        LOG_INFO << "UID : " << it->second->GetUid();
+        //LOG_INFO << "UID : " << it->second->GetUid();
         std::string msg = BuildPacket(it->second->GetUid(), dwCmdId, str);
         it->second->SendPacket(msg);
     }
@@ -161,11 +183,11 @@ bool World::HandlerLogin(PlayerPtr& play, std::string& str)
     std::string msg;
     msg = slogin.SerializeAsString();
 
-    LOG_INFO << "HandlerLogin cur uid : " << uidIndex;
+    //LOG_INFO << "HandlerLogin cur uid : " << uidIndex;
     //////////////
     std::string smsg = BuildPacket(play->GetUid(), uint32(cs::ProtoID::ID_S2C_Login), msg);
     play->SendPacket(smsg);
-    SendAllPosUsers();
+    //SendAllPosUsers();
     return true;
 }
 
@@ -177,7 +199,7 @@ bool World::HandlerMove(PlayerPtr& play, std::string& str)
         LOG_ERROR << "Proto parse error";
         return false;
     }
-    LOG_INFO << "HandlerMove : ";
+    //LOG_INFO << "HandlerMove : ";
 
     uint32 dwx = move.dwx();
     uint32 dwy = move.dwy();
@@ -195,7 +217,7 @@ bool World::HandlerMove(PlayerPtr& play, std::string& str)
     // 给视野中的所有人广播位置'
     // std::string smsg = BuildPacket(play->GetUid(), uint32(cs::ProtoID::ID_S2C_Move), msg);
     // play->SendPacket(smsg);
-    SendAllPosUsers();
+    //SendAllPosUsers();
     //BroadcastPacket(uint32(cs::ProtoID::ID_S2C_Move), msg);
     return true;
 }
