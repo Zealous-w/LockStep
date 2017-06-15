@@ -6,6 +6,7 @@ World::World() :
     thread_(&World::Loop, this)
 {
     uidIndex = 0;
+    gameStatus = E_GAME_STATUS_READY;
     RegisterCommand();
 }
 World::~World()
@@ -20,9 +21,12 @@ void World::Loop()
     {
         //if ( !MsgEmpty() ) 
         ConsumeMsg();
-        SendAllPosUsers();
-        //usleep(66000);// 15帧
-        usleep(10000); // 下发20次
+        if ( gameStatus == E_GAME_STATUS_RUNNING )
+        {
+            SendAllPosUsers();
+            //usleep(66000);// 15帧
+            usleep(50000); // 下发10次
+        }
     }
 }
 
@@ -245,7 +249,8 @@ bool World::HandlerAttack(PlayerPtr& play, std::string& str)
     return true;
 }
 
-void World::SendAllPosUsers() {
+void World::SendAllPosUsers() 
+{
     cs::S2C_AllPos spos;
     cs::User* us;
 
@@ -261,4 +266,10 @@ void World::SendAllPosUsers() {
     std::string msg;
     msg = spos.SerializeAsString();
     BroadcastPacket(uint32(cs::ProtoID::ID_S2C_AllPos), msg);
+}
+
+void World::SendAllKeyInfo()
+{
+    cs::S2C_Frame frame;
+    
 }

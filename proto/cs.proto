@@ -15,6 +15,8 @@ enum ProtoID {
     ID_C2S_Frame = 10010;
     ID_S2C_Frame = 10011;
     ID_S2C_FrameInit = 10012;
+    ID_C2S_GameReady = 10013;
+    ID_S2C_GameReady = 10014;
 }
 
 message C2S_Ping {
@@ -71,21 +73,28 @@ message S2C_AllPos {
 
 message UserFrame {
     uint32 uid = 1;
-    uint32 keyInfo = 2;
+    repeated uint32 key_info = 2;
 }
 
 message C2S_Frame {
     uint32 uid = 1;
     uint64 frameId = 2;
-    repeated uint32 keyInfo = 3;
+    repeated uint32 key_info = 3;
 }
 
 message S2C_Frame {
-    uint64 frameId = 1;
-    repeated UserFrame user = 2;
+    uint64 frame_id = 1;
+    uint64 nextframe_id = 2;
+    repeated UserFrame users = 3;
 }
 
 message S2C_FrameInit {
     uint32 cur_frame_id = 1;
     uint32 next_frame_id = 2;
+}
+
+message C2S_Ready {
+}
+
+message S2C_Ready {
 }

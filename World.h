@@ -22,8 +22,15 @@ public:
     World();
     ~World();
 public:
+    enum {
+        E_GAME_STATUS_READY     = 1;
+        E_GAME_STATUS_RUNNING   = 2;
+        E_GAME_STATUS_END       = 3;
+    };
+public:
     typedef std::map<std::string, PlayerPtr> MapConnections;
     typedef std::function<bool(PlayerPtr&, std::string&)> ServiceFunc;
+    typedef std::map<uint32/*uid*/, std::vector<uint32>/*keyinfo*/> MapKeyInfoRecord;
     void Loop();
     PlayerPtr GetUser(std::string name);
     bool RegisterUser(muduo::net::TcpConnectionPtr& conn);
@@ -44,10 +51,13 @@ public:
 
     //优化：根据视野范围进行广播
     void SendAllPosUsers();
+    //下发所有的操作
+    void SendAllKeyInfo();
     //帧初始化
     void FrameInitToClient(PlayerPtr& play);
 private:
     bool running_;
+    bool gameStatus;
     int uidIndex;
 
     muduo::BlockingQueue<struct PACKET> msgQueue;
@@ -63,18 +73,14 @@ private:
     std::queue<struct PACKET> m_msg_queue;
     std::queue<struct PACKET> m_tmp_queue;
 
-    ///客户端是否有操作, 0代表没有
-    std::vector<uint32> vPlayerOp;
-
     uint32 upStep;
-    uint64 sumFrameAdd;
     uint64 curFrameId;
     uint64 nextFrameId;
-    //std::map<uint64, uint32> mFrameInfo;
-    std::vector<uint32> vCurFrameInfo;
+    MapKeyInfoRecord vCurFrameInfo;
 public:
     bool HandlerLogin(PlayerPtr& play, std::string& str);
     bool HandlerMove(PlayerPtr& play, std::string& str);
     bool HandlerAttack(PlayerPtr& play, std::string& str);
+    bool HandlerReady(PlayerPtr& play, std::string& str);
 };
 #endif
