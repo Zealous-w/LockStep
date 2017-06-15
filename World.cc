@@ -18,9 +18,11 @@ void World::Loop()
     running_ = true;
     while(running_)
     {
+        //if ( !MsgEmpty() ) 
         ConsumeMsg();
         SendAllPosUsers();
-        usleep(66000);// 15帧
+        //usleep(66000);// 15帧
+        usleep(10000); // 下发20次
     }
 }
 
@@ -44,7 +46,6 @@ void World::ConsumeMsg()
 		cond_.wait(lck);
 	}
 
-    //LOG_INFO << "MSG QUEUE size : " << m_msg_queue.size();
     m_tmp_queue.swap(m_msg_queue);
     lck.unlock();
 	
@@ -57,7 +58,8 @@ void World::ConsumeMsg()
 
 bool World::MsgEmpty()
 {
-    return !msgQueue.size();
+    std::unique_lock<std::mutex> lck(mtx_);
+    return m_msg_queue.empty();
 }
 
 PlayerPtr World::GetUser(std::string name)
@@ -160,6 +162,20 @@ void World::BroadcastPacket(PlayerPtr& play, uint32 dwCmdId, std::string& str)
     }
 }
 
+void World::FrameInitToClient(PlayerPtr& play)
+{
+    cs::S2C_FrameInit frame;
+
+    frame.set_cur_frame_id(curFrameId);
+    frame.set_next_frame_id(nextFrameId);
+
+    std::string msg;
+    msg = slogin.SerializeAsString();
+    
+    std::string smsg = BuildPacket(play->GetUid(), uint32(cs::ProtoID::ID_S2C_FrameInit), msg);
+    play->SendPacket(smsg);
+}
+
 /////////////////////////
 bool World::HandlerLogin(PlayerPtr& play, std::string& str)
 {
@@ -187,6 +203,8 @@ bool World::HandlerLogin(PlayerPtr& play, std::string& str)
     //////////////
     std::string smsg = BuildPacket(play->GetUid(), uint32(cs::ProtoID::ID_S2C_Login), msg);
     play->SendPacket(smsg);
+
+    FrameInitToClient(play);
     //SendAllPosUsers();
     return true;
 }

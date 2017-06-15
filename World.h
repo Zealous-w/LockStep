@@ -44,6 +44,8 @@ public:
 
     //优化：根据视野范围进行广播
     void SendAllPosUsers();
+    //帧初始化
+    void FrameInitToClient(PlayerPtr& play);
 private:
     bool running_;
     int uidIndex;
@@ -60,6 +62,16 @@ private:
     std::condition_variable cond_;
     std::queue<struct PACKET> m_msg_queue;
     std::queue<struct PACKET> m_tmp_queue;
+
+    ///客户端是否有操作, 0代表没有
+    std::vector<uint32> vPlayerOp;
+
+    uint32 upStep;
+    uint64 sumFrameAdd;
+    uint64 curFrameId;
+    uint64 nextFrameId;
+    //std::map<uint64, uint32> mFrameInfo;
+    std::vector<uint32> vCurFrameInfo;
 public:
     bool HandlerLogin(PlayerPtr& play, std::string& str);
     bool HandlerMove(PlayerPtr& play, std::string& str);
