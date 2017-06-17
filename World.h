@@ -23,9 +23,9 @@ public:
     ~World();
 public:
     enum {
-        E_GAME_STATUS_READY     = 1;
-        E_GAME_STATUS_RUNNING   = 2;
-        E_GAME_STATUS_END       = 3;
+        E_GAME_STATUS_READY     = 1,
+        E_GAME_STATUS_RUNNING   = 2,
+        E_GAME_STATUS_END       = 3,
     };
 public:
     typedef std::map<std::string, PlayerPtr> MapConnections;
@@ -35,6 +35,8 @@ public:
     PlayerPtr GetUser(std::string name);
     bool RegisterUser(muduo::net::TcpConnectionPtr& conn);
     bool DeleteUser(const muduo::net::TcpConnectionPtr& conn);
+    uint32 GetUsersSize() { muduo::MutexLockGuard lck(mutex_); return sessions_.size(); }
+
 
     void RegisterCommand();
     void DispatherCommand(struct PACKET& msg);
@@ -49,20 +51,24 @@ public:
     void BroadcastPacket(uint32 dwCmdId, std::string& str);
     void BroadcastPacket(PlayerPtr& play, uint32 dwCmdId, std::string& str);
 
+    //下发 玩家登陆信息
+    void SendUserLoginInfo();
     //优化：根据视野范围进行广播
     void SendAllPosUsers();
     //下发所有的操作
     void SendAllKeyInfo();
     //帧初始化
     void FrameInitToClient(PlayerPtr& play);
+    //逻辑帧下发
+    void LogicFrameRefresh();
 private:
     bool running_;
-    bool gameStatus;
+    uint32 gameStatus;
+    uint32 readyNum;
     int uidIndex;
 
     muduo::BlockingQueue<struct PACKET> msgQueue;
     std::thread thread_;
-    std::map<uint32, PlayerPtr> users_;
     std::map<uint32, ServiceFunc> command_;
     MapConnections sessions_;
     mutable muduo::MutexLock mutex_;
@@ -82,5 +88,6 @@ public:
     bool HandlerMove(PlayerPtr& play, std::string& str);
     bool HandlerAttack(PlayerPtr& play, std::string& str);
     bool HandlerReady(PlayerPtr& play, std::string& str);
+    bool HandlerGetFrameInfo(PlayerPtr& play, std::string& str);
 };
 #endif

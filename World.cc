@@ -6,6 +6,9 @@ World::World() :
     thread_(&World::Loop, this)
 {
     uidIndex = 0;
+    readyNum = 0;
+    curFrameId = 0;
+    nextFrameId = 0;
     gameStatus = E_GAME_STATUS_READY;
     RegisterCommand();
 }
@@ -19,13 +22,17 @@ void World::Loop()
     running_ = true;
     while(running_)
     {
-        //if ( !MsgEmpty() ) 
-        ConsumeMsg();
+        if ( !MsgEmpty() ) 
+            ConsumeMsg();
+        
         if ( gameStatus == E_GAME_STATUS_RUNNING )
         {
-            SendAllPosUsers();
+            LogicFrameRefresh();
             //usleep(66000);// 15帧
             usleep(50000); // 下发10次
+        }
+        else{
+            usleep(10000);
         }
     }
 }
@@ -55,6 +62,7 @@ void World::ConsumeMsg()
 	
     while(!m_tmp_queue.empty()) {
 		struct PACKET pkt = m_tmp_queue.front();
+        LOG_INFO << "m_tmp_queue.size() : " << m_tmp_queue.size();
 		m_tmp_queue.pop();
         DispatherCommand(pkt);
 	}
@@ -91,7 +99,10 @@ bool World::DeleteUser(const muduo::net::TcpConnectionPtr& conn)
     std::string name(conn->name().c_str());
     assert(sessions_.find(name) != sessions_.end());
     sessions_.erase(name);
-    LOG_INFO << "DeletUser -> name : " << name;
+    
+    gameStatus = E_GAME_STATUS_READY;
+    readyNum--;
+    LOG_INFO << "DeletUser -> name : " << name << " size : " << readyNum << " gameStatus : " << gameStatus;
 }
 
  void World::RegisterCommand()
@@ -99,11 +110,12 @@ bool World::DeleteUser(const muduo::net::TcpConnectionPtr& conn)
     REGISTER_CMD_CALLBACK(cs::ProtoID::ID_C2S_Login, HandlerLogin);
     REGISTER_CMD_CALLBACK(cs::ProtoID::ID_C2S_Move, HandlerMove);
     REGISTER_CMD_CALLBACK(cs::ProtoID::ID_C2S_Attack, HandlerAttack);
+    REGISTER_CMD_CALLBACK(cs::ProtoID::ID_C2S_Ready, HandlerReady);
+    REGISTER_CMD_CALLBACK(cs::ProtoID::ID_C2S_Frame, HandlerGetFrameInfo);
  }
 
  void World::DispatherCommand(struct PACKET& msg)
  {
-    //LOG_INFO << "msg.cmd : " << msg.cmd;
     if ( command_.find(msg.cmd) != command_.end() )
     {
         PlayerPtr player = GetUser(std::string(msg.connName));
@@ -174,10 +186,54 @@ void World::FrameInitToClient(PlayerPtr& play)
     frame.set_next_frame_id(nextFrameId);
 
     std::string msg;
-    msg = slogin.SerializeAsString();
+    msg = frame.SerializeAsString();
     
     std::string smsg = BuildPacket(play->GetUid(), uint32(cs::ProtoID::ID_S2C_FrameInit), msg);
     play->SendPacket(smsg);
+}
+
+void World::LogicFrameRefresh()
+{
+    cs::S2C_Frame sframe;
+    cs::UserFrame* uframe;
+    
+    curFrameId = nextFrameId;
+    nextFrameId++;
+    //LOG_INFO << "LogicFrameRefresh : " << curFrameId << " " << nextFrameId;
+    sframe.set_frame_id(curFrameId);
+    sframe.set_nextframe_id(nextFrameId);
+
+    for (auto item : vCurFrameInfo)
+    {
+        uframe = sframe.add_users();
+        uframe->set_uid(item.first);
+        for ( auto v : item.second )
+        {
+            uframe->add_key_info(v);
+        }
+    }
+    LOG_INFO << "LogicFrameRefresh ---->" << vCurFrameInfo.size() << " >>> " << sframe.frame_id() << " " << sframe.nextframe_id();
+    vCurFrameInfo.clear();
+    std::string msg;
+    msg = sframe.SerializeAsString();
+    BroadcastPacket(uint32(cs::ProtoID::ID_S2C_Frame), msg);
+}
+
+void World::SendUserLoginInfo()
+{
+    cs::S2C_Sight sight;
+    cs::User* user;
+    for (auto player : sessions_)
+    {
+        user = sight.add_users();
+        user->set_uid(player.second->GetUid());
+        user->set_dwx(player.second->GetPosX());
+        user->set_dwy(player.second->GetPosY());
+    }
+
+    std::string msg;
+    msg = sight.SerializeAsString();
+    BroadcastPacket(uint32(cs::ProtoID::ID_S2C_Sight), msg);
 }
 
 /////////////////////////
@@ -209,6 +265,7 @@ bool World::HandlerLogin(PlayerPtr& play, std::string& str)
     play->SendPacket(smsg);
 
     FrameInitToClient(play);
+    SendUserLoginInfo();
     //SendAllPosUsers();
     return true;
 }
@@ -249,6 +306,50 @@ bool World::HandlerAttack(PlayerPtr& play, std::string& str)
     return true;
 }
 
+bool World::HandlerReady(PlayerPtr& play, std::string& str)
+{
+    cs::C2S_Ready ready;
+    if ( !ready.ParseFromString(str) )
+    {
+        LOG_ERROR << "Proto parse error";
+        return false;
+    }
+    LOG_INFO << "Handler Ready";
+    if (play->GetUid() != 0)
+    {
+        LOG_INFO << "User [" << play->GetUid() << "] Begin Ready <" << this->GetUsersSize() << ">";
+        readyNum++;
+        if ( readyNum == this->GetUsersSize() ) 
+        {
+            gameStatus = E_GAME_STATUS_RUNNING;
+            LOG_INFO << ">>>>>>>>>Game Start";
+        }
+    }
+    else 
+        LOG_INFO << "Invalid uid. Error";
+    return true;
+}
+
+bool World::HandlerGetFrameInfo(PlayerPtr& play, std::string& str)
+{
+    cs::C2S_Frame frame;
+    if ( !frame.ParseFromString(str) )
+    {
+        LOG_ERROR << "Proto parse error";
+        return false;
+    }
+    LOG_INFO << "frame info";
+    uint32 uid = frame.uid();
+    uint64 frameId = frame.frameid();
+
+    int size = frame.key_info_size();
+    for (int i = 0; i < size; i++)
+    {
+        uint32 key = frame.key_info(i);
+        vCurFrameInfo.insert(std::make_pair(uid, std::vector<uint32>())).first->second.push_back(key);
+    }
+}
+
 void World::SendAllPosUsers() 
 {
     cs::S2C_AllPos spos;
@@ -270,6 +371,4 @@ void World::SendAllPosUsers()
 
 void World::SendAllKeyInfo()
 {
-    cs::S2C_Frame frame;
-    
 }

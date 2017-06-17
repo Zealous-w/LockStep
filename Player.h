@@ -7,6 +7,7 @@
 #include <string>
 
 typedef unsigned int uint32;
+typedef unsigned long long uint64;
 
 #define DEF_FUNC_PARAM(func, type, var) \
     private:\
