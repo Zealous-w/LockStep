@@ -1,14 +1,15 @@
 #include "Player.h"
 
-Player::Player(const muduo::net::TcpConnectionPtr& conn) : conn_(conn)
+Player::Player(const khaki::TcpClientPtr& conn) : conn_(conn)
 {
+    dwUid = 0;
     dwX = 10;
     dwY = 10;
 }
 
 Player::~Player() 
 {
-    LOG_INFO << "~Player() ->　uid : " << dwUid;
+    log4cppDebug(khaki::logger, "~Player() ->　uid : %d", dwUid);
 }
 
 /////Send Data////

@@ -18,6 +18,10 @@ enum ProtoID {
     ID_C2S_Ready = 10013;
     ID_S2C_Ready = 10014;
     ID_S2C_Sight = 10015;
+    ID_C2S_Exit = 10016;
+    ID_S2C_Exit = 10017;
+    ID_C2S_GameOver = 10018;
+    ID_S2C_GameOver = 10019;
 }
 
 message C2S_Ping {
@@ -102,4 +106,21 @@ message S2C_Ready {
 
 message S2C_Sight {
     repeated User users = 1;
+}
+
+message C2S_Exit {
+    uint32 uid = 1;
+}
+
+message S2C_Exit {
+    uint32 ret = 1;
+}
+
+message C2S_GameOver {
+    uint32 uid = 1;
+}
+
+message S2C_GameOver {
+    uint32 ret = 1;
+    uint32 uid = 2;
 }

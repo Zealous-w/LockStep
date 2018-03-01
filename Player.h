@@ -1,8 +1,7 @@
 #ifndef MUDUO_EXAMPLES_SCNEE_H
 #define MUDUO_EXAMPLES_SCNEE_H
 
-#include <muduo/net/TcpConnection.h>
-#include <muduo/base/Logging.h>
+#include <khaki.h>
 #include <memory>
 #include <string>
 
@@ -20,20 +19,9 @@ typedef unsigned long long uint64;
             return var;\
         }
 
-const uint32 PACKET_HEAD_LEN = 12;
-struct PACKET {
-    PACKET(const std::string name):connName(name){}
-    uint32 len;
-    uint32 cmd;
-    uint32 uid;
-    std::string msg;
-    
-    std::string connName;
-};
-
 class Player {
 public:
-    Player(const muduo::net::TcpConnectionPtr& conn);
+    Player(const khaki::TcpClientPtr& conn);
     ~Player();
 
     uint32 GetFd();
@@ -43,7 +31,7 @@ public:
     void UseSkill(uint32 dwSkillId, uint32 dwTargetId);
 
 private:
-    muduo::net::TcpConnectionPtr conn_;
+    khaki::TcpClientPtr conn_;
     
     DEF_FUNC_PARAM(Uid, uint32, dwUid)
     DEF_FUNC_PARAM(PosX, int, dwX)

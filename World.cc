@@ -1,5 +1,4 @@
 #include <unistd.h>
-#include <muduo/base/Logging.h>
 #include "World.h"
 
 World::World() : 
@@ -10,6 +9,7 @@ World::World() :
     curFrameId = 0;
     nextFrameId = 0;
     gameStatus = E_GAME_STATUS_READY;
+    running_ = false;
     RegisterCommand();
 }
 World::~World()
@@ -19,20 +19,17 @@ World::~World()
 
 void World::Loop()
 {
-    running_ = true;
+    {
+        std::unique_lock<std::mutex> lck(mtxcond_);
+        mCond_.wait(lck, [this]()->bool{ return running_; });
+    }
     while(running_)
     {
-        if ( !MsgEmpty() ) 
-            ConsumeMsg();
-        
+        loop_.getPoll()->poll(100);
+        MsgProcess(msgQueue_);
         if ( gameStatus == E_GAME_STATUS_RUNNING )
         {
             LogicFrameRefresh();
-            //usleep(66000);// 15帧
-            usleep(50000); // 下发10次
-        }
-        else{
-            usleep(10000);
         }
     }
 }
@@ -44,65 +41,85 @@ void World::Stop()
 
 void World::PushMsg(struct PACKET& msg)
 {
-    std::unique_lock<std::mutex> lck(mtx_);
-    m_msg_queue.push(msg);
-    lck.unlock();
-    cond_.notify_all();
+    // std::unique_lock<std::mutex> lck(mtx_);
+    // m_msg_queue.push(msg);
+    // lck.unlock();
+    // cond_.notify_all();
+    msgQueue_.push(msg);
+}
+
+void World::MsgProcess(khaki::queue<struct PACKET>& msg) {
+    if ( msg.size() > 0 ) {
+        std::queue<struct PACKET> tmpQueue = msg.popAll();
+        while ( !tmpQueue.empty() ) {
+            struct PACKET pkt = tmpQueue.front();
+            DispatherCommand(pkt);
+            tmpQueue.pop();
+        }
+    }
 }
 
 void World::ConsumeMsg()
 {
-    std::unique_lock<std::mutex> lck(mtx_);
-	while(m_msg_queue.empty()){
-		cond_.wait(lck);
-	}
+    // std::unique_lock<std::mutex> lck(mtx_);
+	// while(m_msg_queue.empty()){
+	// 	cond_.wait(lck);
+	// }
 
-    m_tmp_queue.swap(m_msg_queue);
-    lck.unlock();
+    // m_tmp_queue.swap(m_msg_queue);
+    // lck.unlock();
 	
-    while(!m_tmp_queue.empty()) {
-		struct PACKET pkt = m_tmp_queue.front();
-        LOG_INFO << "m_tmp_queue.size() : " << m_tmp_queue.size();
-		m_tmp_queue.pop();
-        DispatherCommand(pkt);
-	}
+    // while(!m_tmp_queue.empty()) {
+	// 	struct PACKET pkt = m_tmp_queue.front();
+	// 	m_tmp_queue.pop();
+    //     DispatherCommand(pkt);
+	// }
 }
 
 bool World::MsgEmpty()
 {
-    std::unique_lock<std::mutex> lck(mtx_);
-    return m_msg_queue.empty();
+    // std::unique_lock<std::mutex> lck(mtx_);
+    // return m_msg_queue.empty();
 }
 
-PlayerPtr World::GetUser(std::string name)
+PlayerPtr World::GetUser(uint32_t id)
 {
-    if ( sessions_.find(name) != sessions_.end())
+    if ( sessions_.find(id) != sessions_.end())
     {
-        return sessions_[name];
+        return sessions_[id];
     }
     return PlayerPtr();
 }
 
-bool World::RegisterUser(muduo::net::TcpConnectionPtr& conn)
+void World::CleanData() {
+    uidIndex = 0;
+    readyNum = 0;
+    gameStatus = E_GAME_STATUS_READY;
+}
+
+bool World::RegisterUser(const khaki::TcpClientPtr& conn)
 {   
-    std::string name(conn->name().c_str());
-    muduo::MutexLockGuard lck(mutex_);
-    assert(sessions_.find(name) == sessions_.end());
-    sessions_.insert(std::make_pair(name, PlayerPtr(new Player(conn))));
-    LOG_INFO << "AddUser -> name : " << name;
+    std::unique_lock<std::mutex> lck(mtxSession_);
+    assert(sessions_.find(conn->getUniqueId()) == sessions_.end());
+    sessions_.insert(std::make_pair(conn->getUniqueId(), PlayerPtr(new Player(conn))));
+    log4cppDebug(khaki::logger, "AddUser -> ID : %d", conn->getUniqueId());
     return true;
 }
 
-bool World::DeleteUser(const muduo::net::TcpConnectionPtr& conn)
+bool World::DeleteUser(const khaki::TcpClientPtr& conn)
 {
-    muduo::MutexLockGuard lck(mutex_);
-    std::string name(conn->name().c_str());
-    assert(sessions_.find(name) != sessions_.end());
-    sessions_.erase(name);
+    std::unique_lock<std::mutex> lck(mtxSession_);
+    assert(sessions_.find(conn->getUniqueId()) != sessions_.end());
+    sessions_.erase(conn->getUniqueId());
     
     gameStatus = E_GAME_STATUS_READY;
-    readyNum--;
-    LOG_INFO << "DeletUser -> name : " << name << " size : " << readyNum << " gameStatus : " << gameStatus;
+    if (readyNum > 0) {
+        readyNum--;
+    }
+    if (readyNum == 0) {
+        this->CleanData();
+    }
+    log4cppDebug(khaki::logger, "readyNum=%u, status=%u", readyNum, gameStatus);
 }
 
  void World::RegisterCommand()
@@ -112,55 +129,45 @@ bool World::DeleteUser(const muduo::net::TcpConnectionPtr& conn)
     REGISTER_CMD_CALLBACK(cs::ProtoID::ID_C2S_Attack, HandlerAttack);
     REGISTER_CMD_CALLBACK(cs::ProtoID::ID_C2S_Ready, HandlerReady);
     REGISTER_CMD_CALLBACK(cs::ProtoID::ID_C2S_Frame, HandlerGetFrameInfo);
+    REGISTER_CMD_CALLBACK(cs::ProtoID::ID_C2S_Exit, HandlerExit);
+    REGISTER_CMD_CALLBACK(cs::ProtoID::ID_C2S_GameOver, HandlerGameOver);
  }
 
  void World::DispatherCommand(struct PACKET& msg)
  {
     if ( command_.find(msg.cmd) != command_.end() )
     {
-        PlayerPtr player = GetUser(std::string(msg.connName));
+        PlayerPtr player = GetUser(msg.id);
         if ( player )
         {
             command_[msg.cmd](player, msg.msg);
             return;
         }
-        LOG_ERROR << "not found this user : " << msg.uid;
+        log4cppDebug(khaki::logger, "not found this user : %d %d", msg.uid, msg.cmd);
     }
     else
     {
-        LOG_ERROR << "error proto : " << msg.cmd;
+        log4cppDebug(khaki::logger, "error proto : %d", msg.cmd);
     }
  }
 
  std::string World::BuildPacket(uint32 dwUid, uint32 dwCmdId, std::string& msg)
  {
-    struct PACKET pkt("name");
+    struct PACKET pkt;
     pkt.len = PACKET_HEAD_LEN + msg.size();
     pkt.cmd = uint32(dwCmdId);
     pkt.uid = dwUid;
     pkt.msg = msg;
-    
-    char* msg_ = new char[pkt.len];
-    memset(msg_, 0, pkt.len);
-
-    memcpy(msg_, (char*)&(pkt.len), sizeof(uint32));
-    memcpy(msg_ + 4, (char*)&pkt.cmd, sizeof(uint32));
-    memcpy(msg_ + 8, (char*)&pkt.uid, sizeof(uint32));
-    memcpy(msg_ + 12, pkt.msg.c_str(), msg.size());
-
-    //LOG_INFO << "message size : " << *(uint32*)msg_;
-    std::string smsg(msg_, pkt.len);
-    delete msg_;
+    std::string smsg = Encode(pkt);
     return smsg;
  }
 
 void World::BroadcastPacket(uint32 dwCmdId, std::string& str)
 {
-    muduo::MutexLockGuard lck(mutex_);
+    std::unique_lock<std::mutex> lck(mtxSession_);
     for (MapConnections::iterator it = sessions_.begin(); 
                 it != sessions_.end(); ++it )
     {
-        //LOG_INFO << "UID : " << it->second->GetUid();
         std::string msg = BuildPacket(it->second->GetUid(), dwCmdId, str);
         it->second->SendPacket(msg);
     }
@@ -168,7 +175,7 @@ void World::BroadcastPacket(uint32 dwCmdId, std::string& str)
 
 void World::BroadcastPacket(PlayerPtr& play, uint32 dwCmdId, std::string& str)
 {
-    muduo::MutexLockGuard lck(mutex_);
+    std::unique_lock<std::mutex> lck(mtxSession_);
     for (MapConnections::iterator it = sessions_.begin(); 
                 it != sessions_.end(); ++it )
     {
@@ -199,7 +206,7 @@ void World::LogicFrameRefresh()
     
     curFrameId = nextFrameId;
     nextFrameId++;
-    //LOG_INFO << "LogicFrameRefresh : " << curFrameId << " " << nextFrameId;
+
     sframe.set_frame_id(curFrameId);
     sframe.set_nextframe_id(nextFrameId);
 
@@ -212,7 +219,8 @@ void World::LogicFrameRefresh()
             uframe->add_key_info(v);
         }
     }
-    LOG_INFO << "LogicFrameRefresh ---->" << vCurFrameInfo.size() << " >>> " << sframe.frame_id() << " " << sframe.nextframe_id();
+    mOldFrameInfo[curFrameId] = vCurFrameInfo;
+    //log4cppDebug(khaki::logger, "LogicFrameRefresh %u, %u, %u", vCurFrameInfo.size(), sframe.frame_id(), sframe.nextframe_id());
     vCurFrameInfo.clear();
     std::string msg;
     msg = sframe.SerializeAsString();
@@ -242,12 +250,14 @@ bool World::HandlerLogin(PlayerPtr& play, std::string& str)
     cs::C2S_Login login;
     if ( !login.ParseFromString(str) )
     {
-        LOG_ERROR << "Proto parse error";
+        //LOG_ERROR << "Proto parse error";
+        log4cppDebug(khaki::logger, "Proto parse error");
         return false;
     }
     //////////////
     if (play->GetUid() != 0) {
-        LOG_ERROR << "This player already exits";
+        //LOG_ERROR << "This player already exits";
+        log4cppDebug(khaki::logger, "This player already exits %u", play->GetUid());
         return false;
     }
 
@@ -259,7 +269,7 @@ bool World::HandlerLogin(PlayerPtr& play, std::string& str)
     std::string msg;
     msg = slogin.SerializeAsString();
 
-    //LOG_INFO << "HandlerLogin cur uid : " << uidIndex;
+    log4cppDebug(khaki::logger, "HandlerLogin cur uid : %d", uidIndex);
     //////////////
     std::string smsg = BuildPacket(play->GetUid(), uint32(cs::ProtoID::ID_S2C_Login), msg);
     play->SendPacket(smsg);
@@ -267,6 +277,7 @@ bool World::HandlerLogin(PlayerPtr& play, std::string& str)
     FrameInitToClient(play);
     SendUserLoginInfo();
     //SendAllPosUsers();
+    
     return true;
 }
 
@@ -275,7 +286,7 @@ bool World::HandlerMove(PlayerPtr& play, std::string& str)
     cs::C2S_Move move;
     if ( !move.ParseFromString(str) )
     {
-        LOG_ERROR << "Proto parse error";
+        //LOG_ERROR << "Proto parse error";
         return false;
     }
     //LOG_INFO << "HandlerMove : ";
@@ -311,22 +322,22 @@ bool World::HandlerReady(PlayerPtr& play, std::string& str)
     cs::C2S_Ready ready;
     if ( !ready.ParseFromString(str) )
     {
-        LOG_ERROR << "Proto parse error";
+        log4cppDebug(khaki::logger, "Proto parse error");
         return false;
     }
-    LOG_INFO << "Handler Ready";
+   //LOG_INFO << "Handler Ready";
     if (play->GetUid() != 0)
     {
-        LOG_INFO << "User [" << play->GetUid() << "] Begin Ready <" << this->GetUsersSize() << ">";
         readyNum++;
         if ( readyNum == this->GetUsersSize() ) 
         {
             gameStatus = E_GAME_STATUS_RUNNING;
-            LOG_INFO << ">>>>>>>>>Game Start";
         }
     }
     else 
-        LOG_INFO << "Invalid uid. Error";
+        log4cppDebug(khaki::logger, "Invalid uid. Error");
+
+    log4cppDebug(khaki::logger, "HandlerReady");
     return true;
 }
 
@@ -335,10 +346,10 @@ bool World::HandlerGetFrameInfo(PlayerPtr& play, std::string& str)
     cs::C2S_Frame frame;
     if ( !frame.ParseFromString(str) )
     {
-        LOG_ERROR << "Proto parse error";
+        //LOG_ERROR << "Proto parse error";
         return false;
     }
-    LOG_INFO << "frame info";
+    //LOG_INFO << "frame info";
     uint32 uid = frame.uid();
     uint64 frameId = frame.frameid();
 
@@ -348,6 +359,40 @@ bool World::HandlerGetFrameInfo(PlayerPtr& play, std::string& str)
         uint32 key = frame.key_info(i);
         vCurFrameInfo.insert(std::make_pair(uid, std::vector<uint32>())).first->second.push_back(key);
     }
+}
+
+bool World::HandlerExit(PlayerPtr& play, std::string& str) {
+    cs::C2S_Exit recv;
+    if ( !recv.ParseFromString(str) )
+    {
+        log4cppDebug(khaki::logger, "Proto parse error");
+        return false;
+    }
+}
+
+bool World::HandlerGameOver(PlayerPtr& play, std::string& str) {
+    cs::C2S_GameOver recv;
+    if ( !recv.ParseFromString(str) )
+    {
+        log4cppDebug(khaki::logger, "Proto parse error");
+        return false;
+    }
+
+    //do something
+    gameStatus = E_GAME_STATUS_END;
+    this->CleanData();
+    curFrameId = 0;
+    nextFrameId = 0;
+    mOldFrameInfo.clear();
+    ///////
+    cs::S2C_GameOver csMsg;
+    csMsg.set_ret(1);
+    csMsg.set_uid(recv.uid());
+    std::string msg;
+    msg = csMsg.SerializeAsString();
+    //////////////
+    std::string smsg = BuildPacket(play->GetUid(), uint32(cs::ProtoID::ID_S2C_GameOver), msg);
+    play->SendPacket(smsg);
 }
 
 void World::SendAllPosUsers() 

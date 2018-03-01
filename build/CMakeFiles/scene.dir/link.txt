@@ -1,0 +1,1 @@
+/usr/bin/c++     -std=c++0x -g -std=c++11 -pthread   CMakeFiles/scene.dir/World.cc.o CMakeFiles/scene.dir/LockStepServer.cc.o CMakeFiles/scene.dir/LockStepSession.cc.o CMakeFiles/scene.dir/Player.cc.o CMakeFiles/scene.dir/proto/cs.pb.cc.o  -o scene -rdynamic -lmuduo_net -lprotobuf 

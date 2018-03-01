@@ -1,0 +1,3 @@
+[submodule "khaki"]
+	path = khaki
+	url = git@github.com:Zealous-w/khaki.git

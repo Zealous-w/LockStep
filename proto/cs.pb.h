@@ -35,9 +35,15 @@ namespace cs {
 class C2S_Attack;
 class C2S_AttackDefaultTypeInternal;
 extern C2S_AttackDefaultTypeInternal _C2S_Attack_default_instance_;
+class C2S_Exit;
+class C2S_ExitDefaultTypeInternal;
+extern C2S_ExitDefaultTypeInternal _C2S_Exit_default_instance_;
 class C2S_Frame;
 class C2S_FrameDefaultTypeInternal;
 extern C2S_FrameDefaultTypeInternal _C2S_Frame_default_instance_;
+class C2S_GameOver;
+class C2S_GameOverDefaultTypeInternal;
+extern C2S_GameOverDefaultTypeInternal _C2S_GameOver_default_instance_;
 class C2S_Login;
 class C2S_LoginDefaultTypeInternal;
 extern C2S_LoginDefaultTypeInternal _C2S_Login_default_instance_;
@@ -56,12 +62,18 @@ extern S2C_AllPosDefaultTypeInternal _S2C_AllPos_default_instance_;
 class S2C_Attack;
 class S2C_AttackDefaultTypeInternal;
 extern S2C_AttackDefaultTypeInternal _S2C_Attack_default_instance_;
+class S2C_Exit;
+class S2C_ExitDefaultTypeInternal;
+extern S2C_ExitDefaultTypeInternal _S2C_Exit_default_instance_;
 class S2C_Frame;
 class S2C_FrameDefaultTypeInternal;
 extern S2C_FrameDefaultTypeInternal _S2C_Frame_default_instance_;
 class S2C_FrameInit;
 class S2C_FrameInitDefaultTypeInternal;
 extern S2C_FrameInitDefaultTypeInternal _S2C_FrameInit_default_instance_;
+class S2C_GameOver;
+class S2C_GameOverDefaultTypeInternal;
+extern S2C_GameOverDefaultTypeInternal _S2C_GameOver_default_instance_;
 class S2C_Login;
 class S2C_LoginDefaultTypeInternal;
 extern S2C_LoginDefaultTypeInternal _S2C_Login_default_instance_;
@@ -118,12 +130,16 @@ enum ProtoID {
   ID_C2S_Ready = 10013,
   ID_S2C_Ready = 10014,
   ID_S2C_Sight = 10015,
+  ID_C2S_Exit = 10016,
+  ID_S2C_Exit = 10017,
+  ID_C2S_GameOver = 10018,
+  ID_S2C_GameOver = 10019,
   ProtoID_INT_MIN_SENTINEL_DO_NOT_USE_ = ::google::protobuf::kint32min,
   ProtoID_INT_MAX_SENTINEL_DO_NOT_USE_ = ::google::protobuf::kint32max
 };
 bool ProtoID_IsValid(int value);
 const ProtoID ProtoID_MIN = ID_NULL;
-const ProtoID ProtoID_MAX = ID_S2C_Sight;
+const ProtoID ProtoID_MAX = ID_S2C_GameOver;
 const int ProtoID_ARRAYSIZE = ProtoID_MAX + 1;
 
 const ::google::protobuf::EnumDescriptor* ProtoID_descriptor();
@@ -1606,6 +1622,333 @@ class S2C_Sight : public ::google::protobuf::Message /* @@protoc_insertion_point
   mutable int _cached_size_;
   friend struct protobuf_cs_2eproto::TableStruct;
 };
+// -------------------------------------------------------------------
+
+class C2S_Exit : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:cs.C2S_Exit) */ {
+ public:
+  C2S_Exit();
+  virtual ~C2S_Exit();
+
+  C2S_Exit(const C2S_Exit& from);
+
+  inline C2S_Exit& operator=(const C2S_Exit& from) {
+    CopyFrom(from);
+    return *this;
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const C2S_Exit& default_instance();
+
+  static inline const C2S_Exit* internal_default_instance() {
+    return reinterpret_cast<const C2S_Exit*>(
+               &_C2S_Exit_default_instance_);
+  }
+  static PROTOBUF_CONSTEXPR int const kIndexInFileMessages =
+    17;
+
+  void Swap(C2S_Exit* other);
+
+  // implements Message ----------------------------------------------
+
+  inline C2S_Exit* New() const PROTOBUF_FINAL { return New(NULL); }
+
+  C2S_Exit* New(::google::protobuf::Arena* arena) const PROTOBUF_FINAL;
+  void CopyFrom(const ::google::protobuf::Message& from) PROTOBUF_FINAL;
+  void MergeFrom(const ::google::protobuf::Message& from) PROTOBUF_FINAL;
+  void CopyFrom(const C2S_Exit& from);
+  void MergeFrom(const C2S_Exit& from);
+  void Clear() PROTOBUF_FINAL;
+  bool IsInitialized() const PROTOBUF_FINAL;
+
+  size_t ByteSizeLong() const PROTOBUF_FINAL;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input) PROTOBUF_FINAL;
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const PROTOBUF_FINAL;
+  ::google::protobuf::uint8* InternalSerializeWithCachedSizesToArray(
+      bool deterministic, ::google::protobuf::uint8* target) const PROTOBUF_FINAL;
+  int GetCachedSize() const PROTOBUF_FINAL { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const PROTOBUF_FINAL;
+  void InternalSwap(C2S_Exit* other);
+  private:
+  inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
+    return NULL;
+  }
+  inline void* MaybeArenaPtr() const {
+    return NULL;
+  }
+  public:
+
+  ::google::protobuf::Metadata GetMetadata() const PROTOBUF_FINAL;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // uint32 uid = 1;
+  void clear_uid();
+  static const int kUidFieldNumber = 1;
+  ::google::protobuf::uint32 uid() const;
+  void set_uid(::google::protobuf::uint32 value);
+
+  // @@protoc_insertion_point(class_scope:cs.C2S_Exit)
+ private:
+
+  ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
+  ::google::protobuf::uint32 uid_;
+  mutable int _cached_size_;
+  friend struct protobuf_cs_2eproto::TableStruct;
+};
+// -------------------------------------------------------------------
+
+class S2C_Exit : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:cs.S2C_Exit) */ {
+ public:
+  S2C_Exit();
+  virtual ~S2C_Exit();
+
+  S2C_Exit(const S2C_Exit& from);
+
+  inline S2C_Exit& operator=(const S2C_Exit& from) {
+    CopyFrom(from);
+    return *this;
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const S2C_Exit& default_instance();
+
+  static inline const S2C_Exit* internal_default_instance() {
+    return reinterpret_cast<const S2C_Exit*>(
+               &_S2C_Exit_default_instance_);
+  }
+  static PROTOBUF_CONSTEXPR int const kIndexInFileMessages =
+    18;
+
+  void Swap(S2C_Exit* other);
+
+  // implements Message ----------------------------------------------
+
+  inline S2C_Exit* New() const PROTOBUF_FINAL { return New(NULL); }
+
+  S2C_Exit* New(::google::protobuf::Arena* arena) const PROTOBUF_FINAL;
+  void CopyFrom(const ::google::protobuf::Message& from) PROTOBUF_FINAL;
+  void MergeFrom(const ::google::protobuf::Message& from) PROTOBUF_FINAL;
+  void CopyFrom(const S2C_Exit& from);
+  void MergeFrom(const S2C_Exit& from);
+  void Clear() PROTOBUF_FINAL;
+  bool IsInitialized() const PROTOBUF_FINAL;
+
+  size_t ByteSizeLong() const PROTOBUF_FINAL;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input) PROTOBUF_FINAL;
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const PROTOBUF_FINAL;
+  ::google::protobuf::uint8* InternalSerializeWithCachedSizesToArray(
+      bool deterministic, ::google::protobuf::uint8* target) const PROTOBUF_FINAL;
+  int GetCachedSize() const PROTOBUF_FINAL { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const PROTOBUF_FINAL;
+  void InternalSwap(S2C_Exit* other);
+  private:
+  inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
+    return NULL;
+  }
+  inline void* MaybeArenaPtr() const {
+    return NULL;
+  }
+  public:
+
+  ::google::protobuf::Metadata GetMetadata() const PROTOBUF_FINAL;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // uint32 ret = 1;
+  void clear_ret();
+  static const int kRetFieldNumber = 1;
+  ::google::protobuf::uint32 ret() const;
+  void set_ret(::google::protobuf::uint32 value);
+
+  // @@protoc_insertion_point(class_scope:cs.S2C_Exit)
+ private:
+
+  ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
+  ::google::protobuf::uint32 ret_;
+  mutable int _cached_size_;
+  friend struct protobuf_cs_2eproto::TableStruct;
+};
+// -------------------------------------------------------------------
+
+class C2S_GameOver : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:cs.C2S_GameOver) */ {
+ public:
+  C2S_GameOver();
+  virtual ~C2S_GameOver();
+
+  C2S_GameOver(const C2S_GameOver& from);
+
+  inline C2S_GameOver& operator=(const C2S_GameOver& from) {
+    CopyFrom(from);
+    return *this;
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const C2S_GameOver& default_instance();
+
+  static inline const C2S_GameOver* internal_default_instance() {
+    return reinterpret_cast<const C2S_GameOver*>(
+               &_C2S_GameOver_default_instance_);
+  }
+  static PROTOBUF_CONSTEXPR int const kIndexInFileMessages =
+    19;
+
+  void Swap(C2S_GameOver* other);
+
+  // implements Message ----------------------------------------------
+
+  inline C2S_GameOver* New() const PROTOBUF_FINAL { return New(NULL); }
+
+  C2S_GameOver* New(::google::protobuf::Arena* arena) const PROTOBUF_FINAL;
+  void CopyFrom(const ::google::protobuf::Message& from) PROTOBUF_FINAL;
+  void MergeFrom(const ::google::protobuf::Message& from) PROTOBUF_FINAL;
+  void CopyFrom(const C2S_GameOver& from);
+  void MergeFrom(const C2S_GameOver& from);
+  void Clear() PROTOBUF_FINAL;
+  bool IsInitialized() const PROTOBUF_FINAL;
+
+  size_t ByteSizeLong() const PROTOBUF_FINAL;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input) PROTOBUF_FINAL;
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const PROTOBUF_FINAL;
+  ::google::protobuf::uint8* InternalSerializeWithCachedSizesToArray(
+      bool deterministic, ::google::protobuf::uint8* target) const PROTOBUF_FINAL;
+  int GetCachedSize() const PROTOBUF_FINAL { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const PROTOBUF_FINAL;
+  void InternalSwap(C2S_GameOver* other);
+  private:
+  inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
+    return NULL;
+  }
+  inline void* MaybeArenaPtr() const {
+    return NULL;
+  }
+  public:
+
+  ::google::protobuf::Metadata GetMetadata() const PROTOBUF_FINAL;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // uint32 uid = 1;
+  void clear_uid();
+  static const int kUidFieldNumber = 1;
+  ::google::protobuf::uint32 uid() const;
+  void set_uid(::google::protobuf::uint32 value);
+
+  // @@protoc_insertion_point(class_scope:cs.C2S_GameOver)
+ private:
+
+  ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
+  ::google::protobuf::uint32 uid_;
+  mutable int _cached_size_;
+  friend struct protobuf_cs_2eproto::TableStruct;
+};
+// -------------------------------------------------------------------
+
+class S2C_GameOver : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:cs.S2C_GameOver) */ {
+ public:
+  S2C_GameOver();
+  virtual ~S2C_GameOver();
+
+  S2C_GameOver(const S2C_GameOver& from);
+
+  inline S2C_GameOver& operator=(const S2C_GameOver& from) {
+    CopyFrom(from);
+    return *this;
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const S2C_GameOver& default_instance();
+
+  static inline const S2C_GameOver* internal_default_instance() {
+    return reinterpret_cast<const S2C_GameOver*>(
+               &_S2C_GameOver_default_instance_);
+  }
+  static PROTOBUF_CONSTEXPR int const kIndexInFileMessages =
+    20;
+
+  void Swap(S2C_GameOver* other);
+
+  // implements Message ----------------------------------------------
+
+  inline S2C_GameOver* New() const PROTOBUF_FINAL { return New(NULL); }
+
+  S2C_GameOver* New(::google::protobuf::Arena* arena) const PROTOBUF_FINAL;
+  void CopyFrom(const ::google::protobuf::Message& from) PROTOBUF_FINAL;
+  void MergeFrom(const ::google::protobuf::Message& from) PROTOBUF_FINAL;
+  void CopyFrom(const S2C_GameOver& from);
+  void MergeFrom(const S2C_GameOver& from);
+  void Clear() PROTOBUF_FINAL;
+  bool IsInitialized() const PROTOBUF_FINAL;
+
+  size_t ByteSizeLong() const PROTOBUF_FINAL;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input) PROTOBUF_FINAL;
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const PROTOBUF_FINAL;
+  ::google::protobuf::uint8* InternalSerializeWithCachedSizesToArray(
+      bool deterministic, ::google::protobuf::uint8* target) const PROTOBUF_FINAL;
+  int GetCachedSize() const PROTOBUF_FINAL { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const PROTOBUF_FINAL;
+  void InternalSwap(S2C_GameOver* other);
+  private:
+  inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
+    return NULL;
+  }
+  inline void* MaybeArenaPtr() const {
+    return NULL;
+  }
+  public:
+
+  ::google::protobuf::Metadata GetMetadata() const PROTOBUF_FINAL;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // uint32 ret = 1;
+  void clear_ret();
+  static const int kRetFieldNumber = 1;
+  ::google::protobuf::uint32 ret() const;
+  void set_ret(::google::protobuf::uint32 value);
+
+  // uint32 uid = 2;
+  void clear_uid();
+  static const int kUidFieldNumber = 2;
+  ::google::protobuf::uint32 uid() const;
+  void set_uid(::google::protobuf::uint32 value);
+
+  // @@protoc_insertion_point(class_scope:cs.S2C_GameOver)
+ private:
+
+  ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
+  ::google::protobuf::uint32 ret_;
+  ::google::protobuf::uint32 uid_;
+  mutable int _cached_size_;
+  friend struct protobuf_cs_2eproto::TableStruct;
+};
 // ===================================================================
 
 
@@ -2175,7 +2518,101 @@ S2C_Sight::users() const {
   return users_;
 }
 
+// -------------------------------------------------------------------
+
+// C2S_Exit
+
+// uint32 uid = 1;
+inline void C2S_Exit::clear_uid() {
+  uid_ = 0u;
+}
+inline ::google::protobuf::uint32 C2S_Exit::uid() const {
+  // @@protoc_insertion_point(field_get:cs.C2S_Exit.uid)
+  return uid_;
+}
+inline void C2S_Exit::set_uid(::google::protobuf::uint32 value) {
+  
+  uid_ = value;
+  // @@protoc_insertion_point(field_set:cs.C2S_Exit.uid)
+}
+
+// -------------------------------------------------------------------
+
+// S2C_Exit
+
+// uint32 ret = 1;
+inline void S2C_Exit::clear_ret() {
+  ret_ = 0u;
+}
+inline ::google::protobuf::uint32 S2C_Exit::ret() const {
+  // @@protoc_insertion_point(field_get:cs.S2C_Exit.ret)
+  return ret_;
+}
+inline void S2C_Exit::set_ret(::google::protobuf::uint32 value) {
+  
+  ret_ = value;
+  // @@protoc_insertion_point(field_set:cs.S2C_Exit.ret)
+}
+
+// -------------------------------------------------------------------
+
+// C2S_GameOver
+
+// uint32 uid = 1;
+inline void C2S_GameOver::clear_uid() {
+  uid_ = 0u;
+}
+inline ::google::protobuf::uint32 C2S_GameOver::uid() const {
+  // @@protoc_insertion_point(field_get:cs.C2S_GameOver.uid)
+  return uid_;
+}
+inline void C2S_GameOver::set_uid(::google::protobuf::uint32 value) {
+  
+  uid_ = value;
+  // @@protoc_insertion_point(field_set:cs.C2S_GameOver.uid)
+}
+
+// -------------------------------------------------------------------
+
+// S2C_GameOver
+
+// uint32 ret = 1;
+inline void S2C_GameOver::clear_ret() {
+  ret_ = 0u;
+}
+inline ::google::protobuf::uint32 S2C_GameOver::ret() const {
+  // @@protoc_insertion_point(field_get:cs.S2C_GameOver.ret)
+  return ret_;
+}
+inline void S2C_GameOver::set_ret(::google::protobuf::uint32 value) {
+  
+  ret_ = value;
+  // @@protoc_insertion_point(field_set:cs.S2C_GameOver.ret)
+}
+
+// uint32 uid = 2;
+inline void S2C_GameOver::clear_uid() {
+  uid_ = 0u;
+}
+inline ::google::protobuf::uint32 S2C_GameOver::uid() const {
+  // @@protoc_insertion_point(field_get:cs.S2C_GameOver.uid)
+  return uid_;
+}
+inline void S2C_GameOver::set_uid(::google::protobuf::uint32 value) {
+  
+  uid_ = value;
+  // @@protoc_insertion_point(field_set:cs.S2C_GameOver.uid)
+}
+
 #endif  // !PROTOBUF_INLINE_NOT_IN_HEADERS
+// -------------------------------------------------------------------
+
+// -------------------------------------------------------------------
+
+// -------------------------------------------------------------------
+
+// -------------------------------------------------------------------
+
 // -------------------------------------------------------------------
 
 // -------------------------------------------------------------------
