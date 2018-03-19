@@ -35,7 +35,7 @@ inline std::string Encode(struct PACKET& pkt) {
     msg_ += sizeof(uint32_t);
     pkt.msg.copy(msg_, pkt.msg.size(), 0);
     std::string smsg(msg, pkt.len);
-    delete msg;
+    delete[] msg;
     return smsg;
 }
 
